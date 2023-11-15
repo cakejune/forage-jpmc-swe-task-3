@@ -1,3 +1,6 @@
+#this script seems to be written in py 2 so I had to make some changes to get it to run with python3
+
+
 ################################################################################
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
@@ -31,13 +34,18 @@ import json
 import re
 import threading
 
-#from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import http.server
-from socketserver   import ThreadingMixIn
+from socketserver import ThreadingMixIn
+
+#Defining the path to test.csv since it's in the root directory of the project, not /datafeed. Using exact path so apologies for my username! :)
+TEST_CSV_PATH = '/home/cakejune/jpmorgan_certificate/forage-jpmc-swe-task-3/test.csv'
 
 ################################################################################
 #
 # Config
+
+
 
 # Sim params
 
@@ -143,7 +151,8 @@ def order_book(orders, book, stock_name):
 
 def generate_csv():
     """ Generate a CSV of order history. """
-    with open('test.csv', 'wb') as f:
+    #changed opening mode to 'w' for p3
+    with open(TEST_CSV_PATH, 'w') as f:
         writer = csv.writer(f)
         for t, stock, side, order, size in orders(market()):
             if t > MARKET_OPEN + SIM_LENGTH:
@@ -152,7 +161,7 @@ def generate_csv():
 
 def read_csv():
     """ Read a CSV or order history into a list. """
-    with open('test.csv', 'rt') as f:
+    with open(TEST_CSV_PATH, 'rt') as f:
         for time, stock, side, order, size in csv.reader(f):
             yield dateutil.parser.parse(time), stock, side, float(order), int(size)
 
@@ -160,7 +169,7 @@ def read_csv():
 #
 # Server
 
-class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """ Boilerplate class for a multithreaded HTTP Server, with working
         shutdown.
     """
@@ -168,7 +177,7 @@ class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
     def shutdown(self):
         """ Override MRO to shutdown properly. """
         self.socket.close()
-        http.server.HTTPServer.shutdown(self)
+        HTTPServer.shutdown(self)
 
 def route(path):
     """ Decorator for a simple bottle-like web framework.  Routes path to the
@@ -314,7 +323,7 @@ class App(object):
 # Main
 
 if __name__ == '__main__':
-    if not os.path.isfile('test.csv'):
+    if not os.path.isfile(TEST_CSV_PATH):
         print ("No data found, generating...")
         generate_csv()
     run(App())

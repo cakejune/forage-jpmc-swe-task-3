@@ -9,12 +9,24 @@ interface IState {
 }
 
 class App extends Component<{}, IState> {
+
+  intervalId: number | null = null;
+
   constructor(props: {}) {
     super(props);
     this.state = {
       data: [],
       showGraph: false,
     };
+  }
+
+  //Adding this back in like I did in the second exercise. 
+  //this is added to handle the unmounting of the component
+  componentWillUnmount() {
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
   renderGraph() {
@@ -24,19 +36,31 @@ class App extends Component<{}, IState> {
   }
 
   getDataFromServer() {
-    let x = 0;
-    const interval = setInterval(() => {
-      DataStreamer.getData((serverResponds: ServerRespond[]) => {
-        this.setState({
-          data: serverResponds,
-          showGraph: true,
+
+    // let x = 0;
+    // const interval = setInterval(()=>{
+
+    if (this.intervalId === null) {
+      // Check if an interval is already running
+      this.intervalId = window.setInterval(() => {
+        DataStreamer.getData((serverResponds: ServerRespond[]) => {
+          // Update the state by creating a new array of data that consists of
+          // Previous data in the state and the new data from server
+          this.setState({
+            data: serverResponds,
+            showGraph: true,
+          });
         });
-      });
-      x++;
-      if (x > 1000) {
-        clearInterval(interval);
-      }
-    }, 100);
+
+        //The below commented-out code was in the solution but there was a violation handout, which means the interval wasn't being cleared properly.
+
+        // x++;
+        // if (x > 1000) {
+        //   //clear interval is used to stop the interval from running more than 1000 times.
+        //   clearInterval(interval);
+        // }
+      }, 100);
+    }
   }
 
   render() {
